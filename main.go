@@ -31,5 +31,7 @@ func main() {
 	r.GET("/get-all-objects", cloudbucket.GetAllObjectsFromBucket)
 	// Endpoint for deleting an object from the cloud storage bucket
 	r.DELETE("/delete-object/:filename", cloudbucket.DeleteObjectFromBucket)
+	// Endpoint for updating an object from the cloud storage bucket
+	r.PUT("/update-object/:filename", cloudbucket.UpdateObjectInBucket)
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

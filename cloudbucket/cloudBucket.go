@@ -427,3 +427,87 @@ func DeleteObjectFromBucket(c *gin.Context) {
 		"message": fmt.Sprintf("Object %s deleted successfully", objectName),
 	})
 }
+
+func UpdateObjectInBucket(c *gin.Context) {
+	// Function to update an object in the bucket
+	bucket := "bucket_golang"       // your bucket name
+	filename := c.Param("filename") // retrieve the filename from the request URL parameter
+
+	// Get the updated file from the request
+	f, err := c.FormFile("file")
+	if err != nil {
+		// Return error response if file retrieval fails
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	// Create a new App Engine context
+	ctx := appengine.NewContext(c.Request)
+
+	// Create a new storage client
+	storageClient, err := storage.NewClient(ctx, option.WithCredentialsFile("keys.json"))
+	if err != nil {
+		// Return error response if client creation fails
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+	defer storageClient.Close()
+
+	// Check if the object exists in the bucket
+	obj := storageClient.Bucket(bucket).Object(filename)
+	_, err = obj.Attrs(ctx)
+	if err != nil {
+		// Return error response if the object does not exist
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	// Open the uploaded file and use it as an io.Reader
+	fileReader, err := f.Open()
+	if err != nil {
+		// Return error response if file open fails
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+	defer fileReader.Close()
+
+	// Create a new storage writer to update the file in the bucket
+	sw := storageClient.Bucket(bucket).Object(filename).NewWriter(ctx)
+
+	// Copy the updated file content to the storage writer
+	if _, err := io.Copy(sw, fileReader); err != nil {
+		// Return error response if file update fails
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	// Close the storage writer
+	if err := sw.Close(); err != nil {
+		// Return error response if storage writer closing fails
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK, gin.H{
+		"message": "file updated successfully",
+	})
+}
