@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-cloud-storage/cloudbucket"
+	"github.com/Sahil-4555/go-cloud-storage/cloudbucket"
 
 	"github.com/gin-gonic/gin"
 )
