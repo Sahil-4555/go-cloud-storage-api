@@ -146,8 +146,24 @@ func GetFileFromBucket(c *gin.Context) {
 		return
 	}
 
+	// Define the full path of the new folder
+	fullFolderPath := filepath.Join(wd, folder)
+
+	// Create the new folder if it doesn't exist
+	if _, err := os.Stat(fullFolderPath); os.IsNotExist(err) {
+		err := os.MkdirAll(fullFolderPath, 0755)
+		if err != nil {
+			// Return error response if folder creation fails
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+				"error":   true,
+			})
+			return
+		}
+	}
+
 	// Define the new file path with the folder and filename
-	newFilePath := filepath.Join(wd, folder, filename)
+	newFilePath := filepath.Join(fullFolderPath, filename)
 
 	// Create a file in the desired storage location
 	newFile, err := os.Create(newFilePath)
@@ -174,7 +190,7 @@ func GetFileFromBucket(c *gin.Context) {
 
 	// Return success response with the new file path
 	c.JSON(http.StatusOK, gin.H{
-		"message": "file stored in the new folder successfully",
+		"message": fmt.Sprintf("file stored in the %s Folder successfully",folder),
 		"path":    newFilePath,
 	})
 }
@@ -384,8 +400,8 @@ func GetAllObjectsFromBucket(c *gin.Context) {
 
 	// Return success response with the folder path
 	c.JSON(http.StatusOK, gin.H{
-		"message": "all objects stored in the new folder successfully",
-		"path":    folder,
+		"message": fmt.Sprintf("all objects stored in the %s Folder successfully",folder),
+		"path":    fullFolderPath,
 	})
 }
 
